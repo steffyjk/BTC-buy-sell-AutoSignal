@@ -224,7 +224,8 @@ function App() {
       </div>
 
       <footer className="footer">
-        <p>Data from Binance | Indicators: RSI ({rsiPeriod}) + EMA ({emaPeriod}) | Not financial advice</p>
+        <p>Data from Binance | Indicators: RSI ({rsiPeriod}) + EMA ({emaPeriod})</p>
+        <p className="disclaimer">For educational purposes only. Not financial advice. Trade at your own risk.</p>
       </footer>
     </div>
   );
