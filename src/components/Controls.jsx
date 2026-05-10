@@ -1,6 +1,19 @@
 import { TIMEFRAMES, THRESHOLD_PRESETS } from '../utils/indicators';
 
-function Controls({ timeframe, setTimeframe, threshold, setThreshold, rsi, ema, price, connected }) {
+function Controls({
+  timeframe,
+  setTimeframe,
+  threshold,
+  setThreshold,
+  rsiPeriod,
+  setRsiPeriod,
+  emaPeriod,
+  setEmaPeriod,
+  rsi,
+  ema,
+  price,
+  connected,
+}) {
   return (
     <div className="controls">
       <div className="control-group">
@@ -15,7 +28,7 @@ function Controls({ timeframe, setTimeframe, threshold, setThreshold, rsi, ema, 
       </div>
 
       <div className="control-group">
-        <label>Signal Sensitivity</label>
+        <label>Sensitivity</label>
         <select value={threshold} onChange={(e) => setThreshold(e.target.value)}>
           {Object.entries(THRESHOLD_PRESETS).map(([key, preset]) => (
             <option key={key} value={key}>
@@ -23,6 +36,28 @@ function Controls({ timeframe, setTimeframe, threshold, setThreshold, rsi, ema, 
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="control-group">
+        <label>RSI Period</label>
+        <input
+          type="number"
+          min="2"
+          max="50"
+          value={rsiPeriod}
+          onChange={(e) => setRsiPeriod(Math.max(2, Math.min(50, parseInt(e.target.value) || 14)))}
+        />
+      </div>
+
+      <div className="control-group">
+        <label>EMA Period</label>
+        <input
+          type="number"
+          min="2"
+          max="100"
+          value={emaPeriod}
+          onChange={(e) => setEmaPeriod(Math.max(2, Math.min(100, parseInt(e.target.value) || 20)))}
+        />
       </div>
 
       <div className="indicators">
@@ -33,13 +68,13 @@ function Controls({ timeframe, setTimeframe, threshold, setThreshold, rsi, ema, 
           </span>
         </div>
         <div className="indicator">
-          <span className="indicator-label">RSI (14)</span>
-          <span className={`indicator-value ${rsi < THRESHOLD_PRESETS[threshold].oversold ? 'oversold' : rsi > THRESHOLD_PRESETS[threshold].overbought ? 'overbought' : ''}`}>
+          <span className="indicator-label">RSI ({rsiPeriod})</span>
+          <span className={`indicator-value ${rsi !== null && rsi < THRESHOLD_PRESETS[threshold].oversold ? 'oversold' : rsi !== null && rsi > THRESHOLD_PRESETS[threshold].overbought ? 'overbought' : ''}`}>
             {rsi !== null ? rsi.toFixed(2) : '--'}
           </span>
         </div>
         <div className="indicator">
-          <span className="indicator-label">EMA (20)</span>
+          <span className="indicator-label">EMA ({emaPeriod})</span>
           <span className="indicator-value">
             ${ema ? ema.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
           </span>

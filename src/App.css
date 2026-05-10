@@ -77,9 +77,27 @@ body {
   min-width: 180px;
 }
 
-.control-group select:focus {
+.control-group select:focus,
+.control-group input:focus {
   outline: none;
   border-color: #ffd700;
+}
+
+.control-group input[type="number"] {
+  padding: 10px 15px;
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  width: 80px;
+  text-align: center;
+}
+
+.control-group input[type="number"]::-webkit-inner-spin-button,
+.control-group input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+  height: 30px;
 }
 
 /* Indicators Display */

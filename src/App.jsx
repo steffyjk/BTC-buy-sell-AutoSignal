@@ -6,9 +6,51 @@ import { fetchHistoricalCandles, createBinanceWs } from './utils/binanceWs';
 import { calculateRSI, calculateEMA, generateSignal, THRESHOLD_PRESETS } from './utils/indicators';
 import './App.css';
 
+// Scan historical candles for past signals
+function scanHistoricalSignals(candles, thresholdKey, rsiPeriod, emaPeriod) {
+  const signals = [];
+  const thresholdConfig = THRESHOLD_PRESETS[thresholdKey];
+  const minCandles = Math.max(rsiPeriod, emaPeriod) + 1;
+
+  if (candles.length < minCandles) return signals;
+
+  let prevSignal = null;
+
+  for (let i = minCandles - 1; i < candles.length; i++) {
+    const slice = candles.slice(0, i + 1);
+    const closes = slice.map((c) => c.close);
+    const rsi = calculateRSI(closes, rsiPeriod);
+    const ema = calculateEMA(closes, emaPeriod);
+    const candle = candles[i];
+
+    if (rsi !== null && ema !== null) {
+      const signal = generateSignal(rsi, candle.close, ema, thresholdConfig);
+
+      // Only add if different from previous signal (avoid consecutive same signals)
+      if (signal && signal !== prevSignal) {
+        signals.push({
+          type: signal,
+          price: candle.close,
+          rsi: rsi,
+          ema: ema,
+          timestamp: candle.time,
+          time: new Date(candle.time * 1000).toLocaleTimeString(),
+        });
+        prevSignal = signal;
+      } else if (!signal) {
+        prevSignal = null;
+      }
+    }
+  }
+
+  return signals;
+}
+
 function App() {
   const [timeframe, setTimeframe] = useState('5m');
   const [threshold, setThreshold] = useState('standard');
+  const [rsiPeriod, setRsiPeriod] = useState(14);
+  const [emaPeriod, setEmaPeriod] = useState(20);
   const [candles, setCandles] = useState([]);
   const [signals, setSignals] = useState([]);
   const [currentPrice, setCurrentPrice] = useState(null);
@@ -18,6 +60,9 @@ function App() {
 
   const wsRef = useRef(null);
   const lastSignalTimeRef = useRef(null);
+  const historicalScannedRef = useRef(false);
+
+  const minCandles = Math.max(rsiPeriod, emaPeriod) + 1;
 
   // Handle incoming candle data
   const handleCandle = useCallback((candle) => {
@@ -26,12 +71,9 @@ function App() {
       const lastCandle = newCandles[newCandles.length - 1];
 
       if (lastCandle && lastCandle.time === candle.time) {
-        // Update existing candle
         newCandles[newCandles.length - 1] = candle;
       } else {
-        // Add new candle
         newCandles.push(candle);
-        // Keep only last 200 candles
         if (newCandles.length > 200) {
           newCandles.shift();
         }
@@ -44,24 +86,37 @@ function App() {
     setConnected(true);
   }, []);
 
-  // Calculate indicators and check for signals
+  // Scan historical signals when candles load
   useEffect(() => {
-    if (candles.length < 21) return;
+    if (candles.length >= minCandles && !historicalScannedRef.current) {
+      const historicalSignals = scanHistoricalSignals(candles, threshold, rsiPeriod, emaPeriod);
+      if (historicalSignals.length > 0) {
+        setSignals(historicalSignals);
+        const lastSig = historicalSignals[historicalSignals.length - 1];
+        if (lastSig) {
+          lastSignalTimeRef.current = lastSig.timestamp;
+        }
+      }
+      historicalScannedRef.current = true;
+    }
+  }, [candles, threshold, rsiPeriod, emaPeriod, minCandles]);
+
+  // Calculate indicators and check for NEW signals (real-time)
+  useEffect(() => {
+    if (candles.length < minCandles || !historicalScannedRef.current) return;
 
     const closes = candles.map((c) => c.close);
-    const rsi = calculateRSI(closes, 14);
-    const ema = calculateEMA(closes, 20);
+    const rsi = calculateRSI(closes, rsiPeriod);
+    const ema = calculateEMA(closes, emaPeriod);
 
     setCurrentRSI(rsi);
     setCurrentEMA(ema);
 
-    // Check for signal on closed candles only
     const lastCandle = candles[candles.length - 1];
     if (lastCandle && rsi !== null && ema !== null) {
       const thresholdConfig = THRESHOLD_PRESETS[threshold];
       const signal = generateSignal(rsi, lastCandle.close, ema, thresholdConfig);
 
-      // Prevent duplicate signals for same candle
       if (signal && lastSignalTimeRef.current !== lastCandle.time) {
         lastSignalTimeRef.current = lastCandle.time;
 
@@ -74,35 +129,32 @@ function App() {
           time: new Date(lastCandle.time * 1000).toLocaleTimeString(),
         };
 
-        setSignals((prev) => [...prev.slice(-49), newSignal]); // Keep last 50 signals
+        setSignals((prev) => [...prev.slice(-49), newSignal]);
       }
     }
-  }, [candles, threshold]);
+  }, [candles, threshold, rsiPeriod, emaPeriod, minCandles]);
 
   // Connect to Binance WebSocket
   useEffect(() => {
     let isMounted = true;
 
     const connect = async () => {
-      // Close existing connection
       if (wsRef.current) {
         wsRef.current.close();
       }
 
-      // Reset state
       setCandles([]);
       setSignals([]);
       setConnected(false);
       lastSignalTimeRef.current = null;
+      historicalScannedRef.current = false;
 
       try {
-        // Fetch historical data first
         const historical = await fetchHistoricalCandles(timeframe, 200);
         if (isMounted) {
           setCandles(historical);
         }
 
-        // Connect to WebSocket
         wsRef.current = createBinanceWs(
           timeframe,
           (candle) => {
@@ -132,6 +184,18 @@ function App() {
     };
   }, [timeframe, handleCandle]);
 
+  // Re-scan when settings change
+  useEffect(() => {
+    if (candles.length >= minCandles) {
+      const historicalSignals = scanHistoricalSignals(candles, threshold, rsiPeriod, emaPeriod);
+      setSignals(historicalSignals);
+      if (historicalSignals.length > 0) {
+        const lastSig = historicalSignals[historicalSignals.length - 1];
+        lastSignalTimeRef.current = lastSig.timestamp;
+      }
+    }
+  }, [threshold, rsiPeriod, emaPeriod]);
+
   return (
     <div className="app">
       <header className="header">
@@ -144,6 +208,10 @@ function App() {
         setTimeframe={setTimeframe}
         threshold={threshold}
         setThreshold={setThreshold}
+        rsiPeriod={rsiPeriod}
+        setRsiPeriod={setRsiPeriod}
+        emaPeriod={emaPeriod}
+        setEmaPeriod={setEmaPeriod}
         rsi={currentRSI}
         ema={currentEMA}
         price={currentPrice}
@@ -151,12 +219,12 @@ function App() {
       />
 
       <div className="main-content">
-        <Chart candles={candles} signals={signals} />
+        <Chart candles={candles} signals={signals} emaPeriod={emaPeriod} />
         <SignalLog signals={signals} />
       </div>
 
       <footer className="footer">
-        <p>Data from Binance | Indicators: RSI (14) + EMA (20) | Not financial advice</p>
+        <p>Data from Binance | Indicators: RSI ({rsiPeriod}) + EMA ({emaPeriod}) | Not financial advice</p>
       </footer>
     </div>
   );
