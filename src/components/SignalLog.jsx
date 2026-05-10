@@ -1,0 +1,32 @@
+function SignalLog({ signals }) {
+  if (signals.length === 0) {
+    return (
+      <div className="signal-log">
+        <h3>Signal Log</h3>
+        <div className="signal-empty">
+          Waiting for signals...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="signal-log">
+      <h3>Signal Log ({signals.length})</h3>
+      <div className="signal-list">
+        {signals.slice().reverse().map((signal, index) => (
+          <div key={index} className={`signal-item ${signal.type.toLowerCase()}`}>
+            <span className="signal-type">{signal.type}</span>
+            <span className="signal-price">
+              ${signal.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+            <span className="signal-rsi">RSI: {signal.rsi.toFixed(1)}</span>
+            <span className="signal-time">{signal.time}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default SignalLog;
