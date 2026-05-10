@@ -11,6 +11,7 @@ function Controls({
   setEmaInput,
   emaPeriods,
   rsi,
+  rsiStatus,
   emas,
   emaTrend,
   price,
@@ -86,6 +87,12 @@ function Controls({
           <span className="indicator-label">RSI ({rsiPeriod})</span>
           <span className={`indicator-value ${rsi !== null && rsi < THRESHOLD_PRESETS[threshold].oversold ? 'oversold' : rsi !== null && rsi > THRESHOLD_PRESETS[threshold].overbought ? 'overbought' : ''}`}>
             {rsi !== null ? rsi.toFixed(2) : '--'}
+          </span>
+        </div>
+        <div className="indicator">
+          <span className="indicator-label">RSI Status</span>
+          <span className={`indicator-value ${rsiStatus ? `rsi-status-${rsiStatus.toLowerCase()}` : ''}`}>
+            {rsiStatus === 'WAIT' ? '--' : rsiStatus.replaceAll('_', ' ')}
           </span>
         </div>
         <div className="indicator">

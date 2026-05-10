@@ -109,6 +109,25 @@ export function generateSignal(rsi, price, emas, thresholds) {
 }
 
 /**
+ * Classify the current RSI state relative to the configured thresholds
+ * @param {number|null} rsi
+ * @param {object} thresholds - RSI thresholds { oversold, overbought }
+ * @returns {string} - One of WAIT, DEEP_OVERSOLD, OVERSOLD, NEUTRAL, OVERBOUGHT, EXTREME_OVERBOUGHT
+ */
+export function getRsiStatus(rsi, thresholds) {
+  if (rsi === null || !thresholds) return 'WAIT';
+
+  const { oversold, overbought } = thresholds;
+
+  if (rsi <= oversold - 5) return 'DEEP_OVERSOLD';
+  if (rsi <= oversold) return 'OVERSOLD';
+  if (rsi >= overbought + 5) return 'EXTREME_OVERBOUGHT';
+  if (rsi >= overbought) return 'OVERBOUGHT';
+
+  return 'NEUTRAL';
+}
+
+/**
  * Threshold presets
  */
 export const THRESHOLD_PRESETS = {

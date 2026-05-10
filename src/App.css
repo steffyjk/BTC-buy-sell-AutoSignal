@@ -243,6 +243,20 @@ body {
   color: var(--sell);
 }
 
+.indicator-value.rsi-status-deep_oversold,
+.indicator-value.rsi-status-oversold {
+  color: var(--buy);
+}
+
+.indicator-value.rsi-status-overbought,
+.indicator-value.rsi-status-extreme_overbought {
+  color: var(--sell);
+}
+
+.indicator-value.rsi-status-neutral {
+  color: var(--accent);
+}
+
 /* Main Content */
 .main-content {
   display: grid;

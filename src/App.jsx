@@ -4,7 +4,7 @@ import Controls from './components/Controls';
 import SignalLog from './components/SignalLog';
 import PaperTrading from './components/PaperTrading';
 import { fetchHistoricalCandles, createBinanceWs } from './utils/binanceWs';
-import { calculateRSI, calculateEMAs, generateSignal, isBullishStack, isBearishStack, THRESHOLD_PRESETS } from './utils/indicators';
+import { calculateRSI, calculateEMAs, generateSignal, getRsiStatus, isBullishStack, isBearishStack, THRESHOLD_PRESETS } from './utils/indicators';
 import './App.css';
 
 const THEME_PRESETS = {
@@ -115,6 +115,8 @@ function App() {
   const emaPeriodsKey = emaPeriods.join(',');
   const minCandles = emaPeriods.length > 0 ? Math.max(rsiPeriod + 1, ...emaPeriods) : rsiPeriod + 1;
   const emaTrend = getEmaTrend(currentEMAs);
+  const thresholdConfig = THRESHOLD_PRESETS[threshold];
+  const currentRsiStatus = getRsiStatus(currentRSI, thresholdConfig);
   const themeConfig = THEME_PRESETS[theme] || THEME_PRESETS.white;
 
   useEffect(() => {
@@ -185,7 +187,6 @@ function App() {
 
     const lastCandle = candles[candles.length - 1];
     if (lastCandle && rsi !== null && emas.every((ema) => ema !== null)) {
-      const thresholdConfig = THRESHOLD_PRESETS[threshold];
       const signal = generateSignal(rsi, lastCandle.close, emas, thresholdConfig);
 
       if (signal && lastSignalTimeRef.current !== lastCandle.time) {
@@ -299,6 +300,7 @@ function App() {
         setEmaInput={setEmaInput}
         emaPeriods={emaPeriods}
         rsi={currentRSI}
+        rsiStatus={currentRsiStatus}
         emas={currentEMAs}
         emaTrend={emaTrend}
         price={currentPrice}
