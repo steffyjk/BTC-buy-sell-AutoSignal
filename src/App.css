@@ -83,21 +83,34 @@ body {
   border-color: #ffd700;
 }
 
-.control-group input[type="number"] {
+.control-group input[type="number"],
+.control-group input[type="text"] {
   padding: 10px 15px;
   background: #2a2a4a;
   border: 1px solid #3a3a5a;
   border-radius: 6px;
   color: #fff;
   font-size: 14px;
+}
+
+.control-group input[type="number"] {
   width: 80px;
   text-align: center;
+}
+
+.control-group input[type="text"] {
+  min-width: 180px;
 }
 
 .control-group input[type="number"]::-webkit-inner-spin-button,
 .control-group input[type="number"]::-webkit-outer-spin-button {
   opacity: 1;
   height: 30px;
+}
+
+.control-help {
+  font-size: 10px;
+  color: #666;
 }
 
 /* Indicators Display */
@@ -130,6 +143,14 @@ body {
   font-weight: 600;
   color: #fff;
   font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.indicator-value.indicator-stack {
+  max-width: 260px;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+  word-break: break-word;
 }
 
 .indicator-value.price {
@@ -172,6 +193,10 @@ body {
 @media (max-width: 900px) {
   .main-content {
     grid-template-columns: 1fr;
+  }
+
+  .signal-item {
+    grid-template-columns: 60px 1fr 80px;
   }
 }
 
@@ -216,7 +241,7 @@ body {
 
 .signal-item {
   display: grid;
-  grid-template-columns: 60px 1fr 70px 70px;
+  grid-template-columns: 60px 1fr 90px 1fr 70px;
   gap: 10px;
   align-items: center;
   padding: 10px;

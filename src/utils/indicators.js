@@ -56,25 +56,52 @@ export function calculateEMA(closes, period = 20) {
 }
 
 /**
- * Generate trading signal based on RSI and EMA
+ * Calculate multiple EMAs for the same close series
+ * @param {number[]} closes - Array of closing prices
+ * @param {number[]} periods - Ordered EMA periods
+ * @returns {Array<number|null>} - EMA values in the same order as periods
+ */
+export function calculateEMAs(closes, periods) {
+  return periods.map((period) => calculateEMA(closes, period));
+}
+
+export function isBullishStack(emas) {
+  for (let i = 0; i < emas.length - 1; i++) {
+    if (!(emas[i] > emas[i + 1])) return false;
+  }
+  return true;
+}
+
+export function isBearishStack(emas) {
+  for (let i = 0; i < emas.length - 1; i++) {
+    if (!(emas[i] < emas[i + 1])) return false;
+  }
+  return true;
+}
+
+/**
+ * Generate trading signal based on RSI and EMA stack alignment
  * @param {number} rsi - Current RSI value
  * @param {number} price - Current price
- * @param {number} ema - Current EMA value
+ * @param {number[]} emas - EMA values ordered from fastest to slowest
  * @param {object} thresholds - RSI thresholds { oversold, overbought }
  * @returns {string|null} - 'BUY', 'SELL', or null
  */
-export function generateSignal(rsi, price, ema, thresholds) {
-  if (rsi === null || ema === null) return null;
+export function generateSignal(rsi, price, emas, thresholds) {
+  if (rsi === null || !Array.isArray(emas) || emas.length === 0 || emas.some((ema) => ema === null)) {
+    return null;
+  }
 
   const { oversold, overbought } = thresholds;
+  const fastestEma = emas[0];
 
-  // BUY: RSI oversold AND price above EMA (momentum turning up)
-  if (rsi < oversold && price > ema) {
+  // BUY: RSI oversold, price above fastest EMA, full bullish EMA stack
+  if (rsi < oversold && price > fastestEma && isBullishStack(emas)) {
     return 'BUY';
   }
 
-  // SELL: RSI overbought AND price below EMA (momentum turning down)
-  if (rsi > overbought && price < ema) {
+  // SELL: RSI overbought, price below fastest EMA, full bearish EMA stack
+  if (rsi > overbought && price < fastestEma && isBearishStack(emas)) {
     return 'SELL';
   }
 

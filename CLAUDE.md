@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Real-time BTC/USDT trading signal bot that generates BUY/SELL signals based on RSI and EMA indicators. Pure frontend React app — no backend needed.
+Real-time BTC/USDT trading signal bot that generates BUY/SELL signals based on RSI and a configurable EMA stack. Pure frontend React app — no backend needed.
 
 **Live URL:** https://btc.steffy.in
 **Repo:** https://github.com/steffyjk/BTC-buy-sell-AutoSignal
@@ -35,8 +35,8 @@ src/
 ├── App.jsx              # Main app, state management, WebSocket connection
 ├── App.css              # All styles (dark theme)
 ├── components/
-│   ├── Chart.jsx        # Lightweight Charts candlestick + EMA line + markers
-│   ├── Controls.jsx     # Timeframe, sensitivity, RSI/EMA period inputs
+│   ├── Chart.jsx        # Lightweight Charts candlestick + multiple EMA lines + markers
+│   ├── Controls.jsx     # Timeframe, sensitivity, RSI and EMA stack inputs
 │   └── SignalLog.jsx    # Signal history list
 └── utils/
     ├── indicators.js    # RSI, EMA calculations, signal logic, presets
@@ -45,22 +45,26 @@ src/
 
 ## Signal Logic
 
-**BUY Signal:** RSI < oversold threshold AND Price > EMA
-**SELL Signal:** RSI > overbought threshold AND Price < EMA
+**BUY Signal:** RSI < oversold threshold AND Price > fastest EMA AND all configured EMAs are bullishly stacked
+**SELL Signal:** RSI > overbought threshold AND Price < fastest EMA AND all configured EMAs are bearishly stacked
 
 ### Exact Logic Used In Code
 - Signal generation lives in `src/utils/indicators.js` inside `generateSignal(rsi, price, ema, thresholds)`.
 - A signal is only evaluated when both indicators are available:
   - RSI needs at least `rsiPeriod + 1` closes
-  - EMA needs at least `emaPeriod` closes
-  - App-level minimum candles = `max(rsiPeriod, emaPeriod) + 1`
+  - Every configured EMA needs at least its own period worth of closes
+  - App-level minimum candles = `max(rsiPeriod + 1, ...emaPeriods)`
 - BUY is returned when:
   - `rsi < oversold`
-  - `price > ema`
+  - `price > fastestEma`
+  - `EMA[0] > EMA[1] > EMA[2] > ...`
 - SELL is returned when:
   - `rsi > overbought`
-  - `price < ema`
+  - `price < fastestEma`
+  - `EMA[0] < EMA[1] < EMA[2] < ...`
 - If neither condition matches, the function returns `null`.
+- EMA periods are user-configurable as a comma-separated list such as `9, 21, 50, 100`.
+- The app parses, de-duplicates, and sorts EMA periods automatically from fastest to slowest.
 
 ### How Signals Are Added In Practice
 - Historical scan:
@@ -75,9 +79,9 @@ src/
   - Changing threshold mode, RSI period, or EMA period triggers a full historical re-scan using the same logic.
 
 ### Important Behavior Note
-- This is a reversal-style filter, not a simple trend-following EMA cross:
-  - BUY requires RSI to already be in the oversold zone while price is back above EMA.
-  - SELL requires RSI to already be in the overbought zone while price is back below EMA.
+- This is a reversal-style filter with trend confirmation, not a simple EMA crossover system:
+  - BUY requires RSI to already be in the oversold zone while price is above the fastest EMA and the full EMA stack is bullish.
+  - SELL requires RSI to already be in the overbought zone while price is below the fastest EMA and the full EMA stack is bearish.
 - There is no crossover check, no confirmation candle, and no volume filter in the current implementation.
 
 ### Threshold Presets (in `indicators.js`)
@@ -90,7 +94,7 @@ src/
 ### Configurable Parameters
 - **Timeframe:** 1m, 5m, 15m, 1h, 4h
 - **RSI Period:** 2-50 (default: 14)
-- **EMA Period:** 2-100 (default: 20)
+- **EMA Periods:** comma-separated list, 2-300 per EMA (default: `9, 21, 50`)
 - **Sensitivity:** Aggressive, Standard, Conservative
 
 ## Key Implementation Details
@@ -105,7 +109,7 @@ src/
   - `chart.addSeries(CandlestickSeries, options)` — NOT `addCandlestickSeries()`
   - `chart.addSeries(LineSeries, options)` — NOT `addLineSeries()`
   - `createSeriesMarkers(series, markers)` — NOT `series.setMarkers()`
-- EMA line (yellow) overlaid on candlesticks
+- Multiple EMA lines overlaid on candlesticks
 - BUY markers = green arrows below bar
 - SELL markers = red arrows above bar
 

@@ -7,13 +7,28 @@ function Controls({
   setThreshold,
   rsiPeriod,
   setRsiPeriod,
-  emaPeriod,
-  setEmaPeriod,
+  emaInput,
+  setEmaInput,
+  emaPeriods,
   rsi,
-  ema,
+  emas,
+  emaTrend,
   price,
   connected,
 }) {
+  const formatEmaValues = () => {
+    if (!Array.isArray(emas) || emas.length === 0) return '--';
+    if (emas.length !== emaPeriods.length) return '--';
+    if (emas.some((ema) => ema === null || ema === undefined || Number.isNaN(ema))) return '--';
+
+    return emaPeriods
+      .map((period, index) => {
+        const value = emas[index];
+        return `${period}:${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+      })
+      .join(' | ');
+  };
+
   return (
     <div className="controls">
       <div className="control-group">
@@ -50,14 +65,14 @@ function Controls({
       </div>
 
       <div className="control-group">
-        <label>EMA Period</label>
+        <label>EMA Periods</label>
         <input
-          type="number"
-          min="2"
-          max="100"
-          value={emaPeriod}
-          onChange={(e) => setEmaPeriod(Math.max(2, Math.min(100, parseInt(e.target.value) || 20)))}
+          type="text"
+          value={emaInput}
+          onChange={(e) => setEmaInput(e.target.value)}
+          placeholder="9, 21, 50"
         />
+        <small className="control-help">Comma-separated, sorted automatically</small>
       </div>
 
       <div className="indicators">
@@ -74,9 +89,15 @@ function Controls({
           </span>
         </div>
         <div className="indicator">
-          <span className="indicator-label">EMA ({emaPeriod})</span>
-          <span className="indicator-value">
-            ${ema ? ema.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
+          <span className="indicator-label">EMA Stack</span>
+          <span className="indicator-value indicator-stack">
+            {formatEmaValues()}
+          </span>
+        </div>
+        <div className="indicator">
+          <span className="indicator-label">Trend</span>
+          <span className={`indicator-value ${emaTrend === 'BULLISH' ? 'connected' : emaTrend === 'BEARISH' ? 'disconnected' : ''}`}>
+            {emaPeriods.length === 0 ? 'NO EMA' : emaTrend}
           </span>
         </div>
         <div className="indicator">

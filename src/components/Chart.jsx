@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { createChart, ColorType, CandlestickSeries, LineSeries, createSeriesMarkers } from 'lightweight-charts';
 
-function Chart({ candles, signals, emaPeriod = 20 }) {
+const EMA_COLORS = ['#ffd700', '#ff8c42', '#60a5fa', '#34d399', '#f472b6', '#a78bfa'];
+
+function Chart({ candles, signals, emaPeriods = [20] }) {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candlestickSeriesRef = useRef(null);
-  const emaSeriesRef = useRef(null);
+  const emaSeriesRefs = useRef([]);
   const markersRef = useRef(null);
+  const emaPeriodsKey = emaPeriods.join(',');
 
   // Initialize chart
   useEffect(() => {
@@ -54,15 +57,8 @@ function Chart({ candles, signals, emaPeriod = 20 }) {
       wickDownColor: '#ef5350',
     });
 
-    const emaSeries = chart.addSeries(LineSeries, {
-      color: '#ffd700',
-      lineWidth: 2,
-      title: `EMA ${emaPeriod}`,
-    });
-
     chartRef.current = chart;
     candlestickSeriesRef.current = candlestickSeries;
-    emaSeriesRef.current = emaSeries;
 
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -77,9 +73,31 @@ function Chart({ candles, signals, emaPeriod = 20 }) {
       if (markersRef.current) {
         markersRef.current.detach();
       }
+      markersRef.current = null;
+      emaSeriesRefs.current = [];
+      candlestickSeriesRef.current = null;
+      chartRef.current = null;
       chart.remove();
     };
   }, []);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    emaSeriesRefs.current.forEach((series) => {
+      if (series) {
+        chartRef.current.removeSeries(series);
+      }
+    });
+
+    emaSeriesRefs.current = emaPeriods.map((period, index) =>
+      chartRef.current.addSeries(LineSeries, {
+        color: EMA_COLORS[index % EMA_COLORS.length],
+        lineWidth: 2,
+        title: `EMA ${period}`,
+      })
+    );
+  }, [emaPeriodsKey]);
 
   // Update candlestick and EMA data
   useEffect(() => {
@@ -87,17 +105,25 @@ function Chart({ candles, signals, emaPeriod = 20 }) {
 
     candlestickSeriesRef.current.setData(candles);
 
-    const emaData = calculateEMAForChart(candles, emaPeriod);
-    if (emaSeriesRef.current && emaData.length > 0) {
-      emaSeriesRef.current.setData(emaData);
-      // Update EMA title dynamically
-      emaSeriesRef.current.applyOptions({ title: `EMA ${emaPeriod}` });
+    if (emaSeriesRefs.current.length === 0) {
+      if (chartRef.current) {
+        chartRef.current.timeScale().fitContent();
+      }
+      return;
     }
+
+    emaSeriesRefs.current.forEach((series, index) => {
+      const period = emaPeriods[index];
+      const emaData = calculateEMAForChart(candles, period);
+
+      series.setData(emaData);
+      series.applyOptions({ title: `EMA ${period}` });
+    });
 
     if (chartRef.current) {
       chartRef.current.timeScale().fitContent();
     }
-  }, [candles, emaPeriod]);
+  }, [candles, emaPeriodsKey]);
 
   // Add signal markers using v5 API
   useEffect(() => {
