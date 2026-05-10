@@ -48,6 +48,38 @@ src/
 **BUY Signal:** RSI < oversold threshold AND Price > EMA
 **SELL Signal:** RSI > overbought threshold AND Price < EMA
 
+### Exact Logic Used In Code
+- Signal generation lives in `src/utils/indicators.js` inside `generateSignal(rsi, price, ema, thresholds)`.
+- A signal is only evaluated when both indicators are available:
+  - RSI needs at least `rsiPeriod + 1` closes
+  - EMA needs at least `emaPeriod` closes
+  - App-level minimum candles = `max(rsiPeriod, emaPeriod) + 1`
+- BUY is returned when:
+  - `rsi < oversold`
+  - `price > ema`
+- SELL is returned when:
+  - `rsi > overbought`
+  - `price < ema`
+- If neither condition matches, the function returns `null`.
+
+### How Signals Are Added In Practice
+- Historical scan:
+  - `scanHistoricalSignals()` walks candle-by-candle through the loaded history.
+  - It suppresses consecutive duplicate directions using `prevSignal`.
+  - Example: `BUY, BUY, BUY` across several candles is stored as a single BUY until a candle produces `null` or an opposite signal.
+- Real-time updates:
+  - The latest candle is checked on every update once historical scanning is complete.
+  - A live signal is added only once per candle timestamp using `lastSignalTimeRef`.
+  - This prevents repeated inserts while the same candle is still updating.
+- Settings changes:
+  - Changing threshold mode, RSI period, or EMA period triggers a full historical re-scan using the same logic.
+
+### Important Behavior Note
+- This is a reversal-style filter, not a simple trend-following EMA cross:
+  - BUY requires RSI to already be in the oversold zone while price is back above EMA.
+  - SELL requires RSI to already be in the overbought zone while price is back below EMA.
+- There is no crossover check, no confirmation candle, and no volume filter in the current implementation.
+
 ### Threshold Presets (in `indicators.js`)
 | Mode | Oversold (BUY) | Overbought (SELL) |
 |------|----------------|-------------------|
