@@ -94,7 +94,7 @@ src/
 ### Configurable Parameters
 - **Timeframe:** 1m, 5m, 15m, 1h, 4h
 - **RSI Period:** 2-50 (default: 14)
-- **EMA Periods:** comma-separated list, 2-300 per EMA (default: `9, 21, 50`)
+- **EMA Periods:** comma-separated list, 2-300 per EMA (default: `8, 30`)
 - **Sensitivity:** Aggressive, Standard, Conservative
 
 ## Key Implementation Details

@@ -3,7 +3,7 @@ import { createChart, ColorType, CandlestickSeries, LineSeries, createSeriesMark
 
 const EMA_COLORS = ['#ffd700', '#ff8c42', '#60a5fa', '#34d399', '#f472b6', '#a78bfa'];
 
-function Chart({ candles, signals, emaPeriods = [20] }) {
+function Chart({ candles, signals, emaPeriods = [20], theme }) {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candlestickSeriesRef = useRef(null);
@@ -17,32 +17,32 @@ function Chart({ candles, signals, emaPeriods = [20] }) {
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: '#1a1a2e' },
-        textColor: '#d1d4dc',
+        background: { type: ColorType.Solid, color: theme.background },
+        textColor: theme.textColor,
       },
       grid: {
-        vertLines: { color: '#2a2a4a' },
-        horzLines: { color: '#2a2a4a' },
+        vertLines: { color: theme.gridColor },
+        horzLines: { color: theme.gridColor },
       },
       width: chartContainerRef.current.clientWidth,
       height: 500,
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
-        borderColor: '#3a3a5a',
+        borderColor: theme.borderColor,
       },
       rightPriceScale: {
-        borderColor: '#3a3a5a',
+        borderColor: theme.borderColor,
       },
       crosshair: {
         mode: 1,
         vertLine: {
-          color: '#6a6a8a',
+          color: theme.crosshairColor,
           width: 1,
           style: 2,
         },
         horzLine: {
-          color: '#6a6a8a',
+          color: theme.crosshairColor,
           width: 1,
           style: 2,
         },
@@ -79,7 +79,36 @@ function Chart({ candles, signals, emaPeriods = [20] }) {
       chartRef.current = null;
       chart.remove();
     };
-  }, []);
+  }, [theme]);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    chartRef.current.applyOptions({
+      layout: {
+        background: { type: ColorType.Solid, color: theme.background },
+        textColor: theme.textColor,
+      },
+      grid: {
+        vertLines: { color: theme.gridColor },
+        horzLines: { color: theme.gridColor },
+      },
+      timeScale: {
+        borderColor: theme.borderColor,
+      },
+      rightPriceScale: {
+        borderColor: theme.borderColor,
+      },
+      crosshair: {
+        vertLine: {
+          color: theme.crosshairColor,
+        },
+        horzLine: {
+          color: theme.crosshairColor,
+        },
+      },
+    });
+  }, [theme]);
 
   useEffect(() => {
     if (!chartRef.current) return;

@@ -7,6 +7,31 @@ import { fetchHistoricalCandles, createBinanceWs } from './utils/binanceWs';
 import { calculateRSI, calculateEMAs, generateSignal, isBullishStack, isBearishStack, THRESHOLD_PRESETS } from './utils/indicators';
 import './App.css';
 
+const THEME_PRESETS = {
+  white: {
+    label: 'White',
+    className: 'theme-white',
+    chart: {
+      background: '#f7f7fb',
+      textColor: '#22263a',
+      gridColor: '#d8dbe8',
+      borderColor: '#c1c7dd',
+      crosshairColor: '#8992b0',
+    },
+  },
+  black: {
+    label: 'Black',
+    className: 'theme-black',
+    chart: {
+      background: '#1a1a2e',
+      textColor: '#d1d4dc',
+      gridColor: '#2a2a4a',
+      borderColor: '#3a3a5a',
+      crosshairColor: '#6a6a8a',
+    },
+  },
+};
+
 function parseEmaPeriods(value) {
   const parsed = value
     .split(',')
@@ -72,6 +97,7 @@ function scanHistoricalSignals(candles, thresholdKey, rsiPeriod, emaPeriods) {
 function App() {
   const [timeframe, setTimeframe] = useState('5m');
   const [threshold, setThreshold] = useState('standard');
+  const [theme, setTheme] = useState('white');
   const [rsiPeriod, setRsiPeriod] = useState(14);
   const [emaInput, setEmaInput] = useState('9, 21, 50');
   const [candles, setCandles] = useState([]);
@@ -89,6 +115,7 @@ function App() {
   const emaPeriodsKey = emaPeriods.join(',');
   const minCandles = emaPeriods.length > 0 ? Math.max(rsiPeriod + 1, ...emaPeriods) : rsiPeriod + 1;
   const emaTrend = getEmaTrend(currentEMAs);
+  const themeConfig = THEME_PRESETS[theme] || THEME_PRESETS.white;
 
   useEffect(() => {
     setCurrentEMAs([]);
@@ -248,8 +275,15 @@ function App() {
   }, [threshold, rsiPeriod, emaPeriodsKey]);
 
   return (
-    <div className="app">
+    <div className={`app ${themeConfig.className}`}>
       <header className="header">
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={() => setTheme((prev) => (prev === 'white' ? 'black' : 'white'))}
+        >
+          {theme === 'white' ? 'NIGHT' : 'DAY'}
+        </button>
         <h1>BTC Signal Bot</h1>
         <span className="subtitle">Real-time BTC/USDT Trading Signals</span>
       </header>
@@ -272,7 +306,7 @@ function App() {
       />
 
       <div className="main-content">
-        <Chart candles={candles} signals={signals} emaPeriods={emaPeriods} />
+        <Chart candles={candles} signals={signals} emaPeriods={emaPeriods} theme={themeConfig.chart} />
         <SignalLog signals={signals} />
         <PaperTrading signals={signals} currentPrice={currentPrice} />
       </div>
