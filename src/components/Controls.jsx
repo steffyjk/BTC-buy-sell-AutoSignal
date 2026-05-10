@@ -70,7 +70,7 @@ function Controls({
           type="text"
           value={emaInput}
           onChange={(e) => setEmaInput(e.target.value)}
-          placeholder="9, 21, 50"
+          placeholder="8, 30"
         />
         <small className="control-help">Comma-separated, sorted automatically</small>
       </div>

@@ -99,7 +99,7 @@ function App() {
   const [threshold, setThreshold] = useState('standard');
   const [theme, setTheme] = useState('white');
   const [rsiPeriod, setRsiPeriod] = useState(14);
-  const [emaInput, setEmaInput] = useState('9, 21, 50');
+  const [emaInput, setEmaInput] = useState('8, 30');
   const [candles, setCandles] = useState([]);
   const [signals, setSignals] = useState([]);
   const [currentPrice, setCurrentPrice] = useState(null);
