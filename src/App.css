@@ -155,9 +155,18 @@ body {
 /* Main Content */
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 320px 350px;
   gap: 20px;
   flex: 1;
+}
+
+@media (max-width: 1200px) {
+  .main-content {
+    grid-template-columns: 1fr 300px;
+  }
+  .paper-trading {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 900px) {
@@ -291,4 +300,363 @@ body {
 
 .signal-list::-webkit-scrollbar-thumb:hover {
   background: #4a4a6a;
+}
+
+/* ==================== PAPER TRADING ==================== */
+
+.paper-trading {
+  background: #1a1a2e;
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  max-height: 520px;
+  border: 1px solid #2a2a4a;
+}
+
+.paper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.paper-header h3 {
+  font-size: 14px;
+  color: #ffd700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.paper-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #888;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #555;
+}
+
+.status-dot.active {
+  background: #26a69a;
+  box-shadow: 0 0 10px #26a69a;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.paper-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.balance-input {
+  flex: 1;
+}
+
+.balance-input label {
+  display: block;
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.balance-input input {
+  width: 100%;
+  padding: 10px;
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.balance-input input:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.btn-start, .btn-stop, .btn-reset, .btn-export {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.btn-start {
+  background: linear-gradient(135deg, #26a69a, #1e8a7e);
+  color: #fff;
+}
+
+.btn-start:hover {
+  background: linear-gradient(135deg, #2ec4b6, #26a69a);
+  box-shadow: 0 0 15px rgba(38, 166, 154, 0.4);
+}
+
+.btn-stop {
+  background: linear-gradient(135deg, #ef5350, #d32f2f);
+  color: #fff;
+}
+
+.btn-stop:hover {
+  background: linear-gradient(135deg, #ff6b6b, #ef5350);
+}
+
+.btn-reset {
+  background: #3a3a5a;
+  color: #fff;
+}
+
+.btn-reset:hover {
+  background: #4a4a6a;
+}
+
+.btn-export {
+  background: #2a2a4a;
+  color: #ffd700;
+  border: 1px solid #ffd700;
+  font-size: 10px;
+  padding: 8px 12px;
+}
+
+.btn-export:hover:not(:disabled) {
+  background: #ffd700;
+  color: #1a1a2e;
+}
+
+.btn-export:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Stats */
+.paper-stats {
+  background: #252540;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+
+.stat-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.stat-row:last-child {
+  margin-bottom: 0;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 9px;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.stat-value.profit {
+  color: #26a69a;
+}
+
+.stat-value.loss {
+  color: #ef5350;
+}
+
+/* Open Position */
+.open-position {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 12px;
+}
+
+.open-position.long {
+  background: rgba(38, 166, 154, 0.2);
+  border: 1px solid #26a69a;
+}
+
+.open-position.short {
+  background: rgba(239, 83, 80, 0.2);
+  border: 1px solid #ef5350;
+}
+
+.position-label {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.open-position.long .position-label {
+  color: #26a69a;
+}
+
+.open-position.short .position-label {
+  color: #ef5350;
+}
+
+.position-entry, .position-pnl {
+  color: #ccc;
+}
+
+/* Trade History */
+.trade-history {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.history-header h4 {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.history-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.history-controls select {
+  padding: 6px 10px;
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 11px;
+}
+
+.trade-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.no-trades {
+  color: #555;
+  text-align: center;
+  padding: 30px 0;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.trade-item {
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  background: #252540;
+}
+
+.trade-item.win {
+  border-left: 3px solid #26a69a;
+}
+
+.trade-item.lose {
+  border-left: 3px solid #ef5350;
+}
+
+.trade-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.trade-type {
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.trade-type.long {
+  background: rgba(38, 166, 154, 0.3);
+  color: #26a69a;
+}
+
+.trade-type.short {
+  background: rgba(239, 83, 80, 0.3);
+  color: #ef5350;
+}
+
+.trade-prices {
+  font-size: 12px;
+  color: #ccc;
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.trade-pnl {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.trade-pnl.profit {
+  color: #26a69a;
+}
+
+.trade-pnl.loss {
+  color: #ef5350;
+}
+
+.trade-details {
+  display: flex;
+  gap: 15px;
+  font-size: 10px;
+  color: #666;
+}
+
+.trade-points {
+  color: #888;
+}
+
+.trade-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trade-list::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+.trade-list::-webkit-scrollbar-thumb {
+  background: #3a3a5a;
+  border-radius: 3px;
 }

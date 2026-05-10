@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Chart from './components/Chart';
 import Controls from './components/Controls';
 import SignalLog from './components/SignalLog';
+import PaperTrading from './components/PaperTrading';
 import { fetchHistoricalCandles, createBinanceWs } from './utils/binanceWs';
 import { calculateRSI, calculateEMA, generateSignal, THRESHOLD_PRESETS } from './utils/indicators';
 import './App.css';
@@ -221,6 +222,7 @@ function App() {
       <div className="main-content">
         <Chart candles={candles} signals={signals} emaPeriod={emaPeriod} />
         <SignalLog signals={signals} />
+        <PaperTrading signals={signals} currentPrice={currentPrice} />
       </div>
 
       <footer className="footer">
