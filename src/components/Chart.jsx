@@ -11,6 +11,13 @@ function Chart({ candles, signals, emaPeriods = [20], theme }) {
   const markersRef = useRef(null);
   const emaPeriodsKey = emaPeriods.join(',');
 
+  const getChartHeight = () => {
+    if (typeof window === 'undefined') return 500;
+    if (window.innerWidth <= 480) return 300;
+    if (window.innerWidth <= 768) return 360;
+    return 500;
+  };
+
   // Initialize chart
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -25,7 +32,7 @@ function Chart({ candles, signals, emaPeriods = [20], theme }) {
         horzLines: { color: theme.gridColor },
       },
       width: chartContainerRef.current.clientWidth,
-      height: 500,
+      height: getChartHeight(),
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
@@ -62,7 +69,10 @@ function Chart({ candles, signals, emaPeriods = [20], theme }) {
 
     const handleResize = () => {
       if (chartContainerRef.current) {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+        chart.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+          height: getChartHeight(),
+        });
       }
     };
 

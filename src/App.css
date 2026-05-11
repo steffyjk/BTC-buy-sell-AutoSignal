@@ -27,13 +27,15 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  overflow-x: hidden;
 }
 
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  width: 100%;
+  padding: clamp(12px, 2vw, 20px);
   max-width: 1400px;
   margin: 0 auto;
   background: var(--bg);
@@ -115,7 +117,8 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
-  align-items: center;
+  align-items: flex-end;
+  width: 100%;
   padding: 15px 20px;
   background: var(--panel);
   border-radius: 10px;
@@ -127,6 +130,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  flex: 1 1 180px;
+  min-width: 0;
 }
 
 .control-group label {
@@ -144,7 +149,7 @@ body {
   color: var(--text-strong);
   font-size: 14px;
   cursor: pointer;
-  min-width: 180px;
+  width: 100%;
 }
 
 .control-group select:focus,
@@ -164,12 +169,13 @@ body {
 }
 
 .control-group input[type="number"] {
-  width: 80px;
+  width: 100%;
+  min-width: 0;
   text-align: center;
 }
 
 .control-group input[type="text"] {
-  min-width: 180px;
+  width: 100%;
 }
 
 .control-group input[type="number"]::-webkit-inner-spin-button,
@@ -189,16 +195,21 @@ body {
   gap: 25px;
   margin-left: auto;
   flex-wrap: wrap;
+  flex: 999 1 420px;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 .indicator {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 8px 15px;
   background: var(--panel-alt);
   border-radius: 8px;
-  min-width: 100px;
+  flex: 1 1 120px;
+  min-width: 0;
 }
 
 .indicator-label {
@@ -260,14 +271,15 @@ body {
 /* Main Content */
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 320px 350px;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr) minmax(300px, 0.9fr);
   gap: 20px;
   flex: 1;
 }
 
 @media (max-width: 1200px) {
   .main-content {
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
   }
   .paper-trading {
     grid-column: 1 / -1;
@@ -277,10 +289,6 @@ body {
 @media (max-width: 900px) {
   .main-content {
     grid-template-columns: 1fr;
-  }
-
-  .signal-item {
-    grid-template-columns: 60px 1fr 80px;
   }
 
   .theme-toggle {
@@ -295,7 +303,9 @@ body {
   background: var(--panel);
   border-radius: 10px;
   padding: 10px;
-  min-height: 500px;
+  width: 100%;
+  min-height: 320px;
+  min-width: 0;
   box-shadow: 0 12px 30px var(--shadow);
 }
 
@@ -306,6 +316,7 @@ body {
   padding: 15px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   max-height: 520px;
   box-shadow: 0 12px 30px var(--shadow);
 }
@@ -328,6 +339,7 @@ body {
 
 .signal-list {
   overflow-y: auto;
+  min-width: 0;
   flex: 1;
 }
 
@@ -335,11 +347,12 @@ body {
   display: grid;
   grid-template-columns: 60px 1fr 90px 1fr 70px;
   gap: 10px;
-  align-items: center;
+  align-items: start;
   padding: 10px;
   margin-bottom: 8px;
   border-radius: 6px;
   font-size: 13px;
+  min-width: 0;
 }
 
 .signal-item.buy {
@@ -368,11 +381,13 @@ body {
 .signal-price {
   color: var(--text-strong);
   font-family: 'Monaco', 'Consolas', monospace;
+  word-break: break-word;
 }
 
 .signal-rsi {
   color: var(--text-muted);
   font-size: 11px;
+  word-break: break-word;
 }
 
 .signal-time {
@@ -476,12 +491,14 @@ body {
 
 .paper-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 15px;
 }
 
 .balance-input {
-  flex: 1;
+  flex: 1 1 180px;
+  min-width: 0;
 }
 
 .balance-input label {
@@ -516,6 +533,10 @@ body {
   cursor: pointer;
   text-transform: uppercase;
   transition: all 0.2s;
+}
+
+.btn-start, .btn-stop, .btn-reset {
+  flex: 0 0 auto;
 }
 
 .btn-start {
@@ -574,6 +595,7 @@ body {
 
 .stat-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 15px;
   margin-bottom: 10px;
 }
@@ -613,6 +635,7 @@ body {
 /* Open Position */
 .open-position {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
@@ -658,9 +681,11 @@ body {
 
 .history-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+  gap: 10px;
 }
 
 .history-header h4 {
@@ -671,6 +696,7 @@ body {
 
 .history-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -713,9 +739,11 @@ body {
 
 .trade-main {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 5px;
+  gap: 6px 12px;
 }
 
 .trade-type {
@@ -757,6 +785,7 @@ body {
 
 .trade-details {
   display: flex;
+  flex-wrap: wrap;
   gap: 15px;
   font-size: 10px;
   color: var(--text-soft);
@@ -777,4 +806,180 @@ body {
 .trade-list::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: 3px;
+}
+
+@media (max-width: 1024px) {
+  .controls {
+    padding: 16px;
+  }
+
+  .indicators {
+    margin-left: 0;
+    width: 100%;
+    justify-content: stretch;
+    gap: 12px;
+  }
+
+  .indicator {
+    flex: 1 1 calc(33.333% - 12px);
+  }
+
+  .signal-item {
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "type price time"
+      "rsi rsi rsi"
+      "ema ema ema";
+  }
+
+  .signal-type {
+    grid-area: type;
+  }
+
+  .signal-price {
+    grid-area: price;
+  }
+
+  .signal-time {
+    grid-area: time;
+  }
+
+  .signal-rsi:first-of-type {
+    grid-area: rsi;
+  }
+
+  .signal-rsi:last-of-type {
+    grid-area: ema;
+  }
+}
+
+@media (max-width: 768px) {
+  .app {
+    padding: 12px;
+  }
+
+  .header {
+    margin-bottom: 16px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  .controls {
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .control-group {
+    flex-basis: calc(50% - 7px);
+  }
+
+  .control-group:last-of-type {
+    flex-basis: 100%;
+  }
+
+  .indicator {
+    flex: 1 1 calc(50% - 12px);
+  }
+
+  .chart-container,
+  .signal-log,
+  .paper-trading {
+    max-height: none;
+  }
+
+  .paper-header,
+  .open-position {
+    gap: 8px;
+  }
+
+  .trade-list,
+  .signal-list {
+    max-height: 380px;
+  }
+}
+
+@media (max-width: 560px) {
+  .app {
+    padding: 10px;
+  }
+
+  .header h1 {
+    font-size: 21px;
+  }
+
+  .header .subtitle {
+    font-size: 13px;
+  }
+
+  .controls {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .control-group,
+  .control-group:last-of-type,
+  .balance-input,
+  .btn-start,
+  .btn-stop,
+  .btn-reset {
+    flex-basis: 100%;
+  }
+
+  .indicator {
+    flex-basis: 100%;
+    padding: 10px 12px;
+  }
+
+  .indicator-value.indicator-stack {
+    max-width: none;
+    font-size: 10px;
+  }
+
+  .signal-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "type time"
+      "price price"
+      "rsi rsi"
+      "ema ema";
+    gap: 6px 10px;
+  }
+
+  .signal-time {
+    text-align: right;
+  }
+
+  .paper-stats {
+    padding: 10px;
+  }
+
+  .stat-item {
+    flex: 1 1 100%;
+  }
+
+  .history-controls,
+  .history-controls select,
+  .btn-export {
+    width: 100%;
+  }
+
+  .history-controls select,
+  .btn-export {
+    min-height: 40px;
+  }
+
+  .trade-prices,
+  .trade-pnl {
+    width: 100%;
+  }
+
+  .trade-pnl {
+    text-align: left;
+  }
+
+  .footer {
+    padding-bottom: 6px;
+  }
 }
