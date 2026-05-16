@@ -65,43 +65,78 @@ export function calculateEMAs(closes, periods) {
   return periods.map((period) => calculateEMA(closes, period));
 }
 
-export function isBullishStack(emas) {
-  for (let i = 0; i < emas.length - 1; i++) {
-    if (!(emas[i] > emas[i + 1])) return false;
-  }
-  return true;
-}
-
-export function isBearishStack(emas) {
-  for (let i = 0; i < emas.length - 1; i++) {
-    if (!(emas[i] < emas[i + 1])) return false;
-  }
-  return true;
-}
-
 /**
- * Generate trading signal based on RSI and EMA stack alignment
- * @param {number} rsi - Current RSI value
+ * Generate trading signal based on EMA crossover (no RSI)
+ *
+ * Single EMA mode: Price crossover
+ * - BUY: Price crosses above EMA (prev price <= prev EMA, current price > current EMA)
+ * - SELL: Price crosses below EMA (prev price >= prev EMA, current price < current EMA)
+ *
+ * Multiple EMA mode: Fast/Slow EMA crossover
+ * - BUY: Fastest EMA crosses above slowest EMA
+ * - SELL: Fastest EMA crosses below slowest EMA
+ *
  * @param {number} price - Current price
- * @param {number[]} emas - EMA values ordered from fastest to slowest
- * @param {object} thresholds - RSI thresholds { oversold, overbought }
+ * @param {number[]} emas - Current EMA values ordered from fastest to slowest
+ * @param {number} prevPrice - Previous candle's price
+ * @param {number[]} prevEmas - Previous candle's EMA values
+ * @param {object|null} rsiConfig - Optional RSI config { rsi, oversold, overbought }
  * @returns {string|null} - 'BUY', 'SELL', or null
  */
-export function generateSignal(rsi, price, emas, thresholds) {
-  if (rsi === null || !Array.isArray(emas) || emas.length === 0 || emas.some((ema) => ema === null)) {
+export function generateSignal(price, emas, prevPrice, prevEmas, rsiConfig = null) {
+  if (!Array.isArray(emas) || emas.length === 0 || emas.some((ema) => ema === null)) {
     return null;
   }
 
-  const { oversold, overbought } = thresholds;
-  const fastestEma = emas[0];
+  if (!Array.isArray(prevEmas) || prevEmas.length === 0 || prevEmas.some((ema) => ema === null)) {
+    return null;
+  }
 
-  // BUY: RSI oversold, price above fastest EMA, full bullish EMA stack
-  if (rsi < oversold && price > fastestEma && isBullishStack(emas)) {
+  if (prevPrice === null || prevPrice === undefined) {
+    return null;
+  }
+
+  // Check RSI filter if enabled
+  let rsiBuyOk = true;
+  let rsiSellOk = true;
+
+  if (rsiConfig && rsiConfig.rsi !== null) {
+    const { rsi, oversold, overbought } = rsiConfig;
+    rsiBuyOk = rsi <= oversold;
+    rsiSellOk = rsi >= overbought;
+  }
+
+  // Single EMA mode: Price crossover
+  if (emas.length === 1) {
+    const currentEma = emas[0];
+    const prevEma = prevEmas[0];
+
+    // BUY: Price crosses above EMA (and RSI filter passes if enabled)
+    if (prevPrice <= prevEma && price > currentEma && rsiBuyOk) {
+      return 'BUY';
+    }
+
+    // SELL: Price crosses below EMA (and RSI filter passes if enabled)
+    if (prevPrice >= prevEma && price < currentEma && rsiSellOk) {
+      return 'SELL';
+    }
+
+    return null;
+  }
+
+  // Multiple EMA mode: Fast EMA crosses Slow EMA
+  const fastEma = emas[0];
+  const slowEma = emas[emas.length - 1];
+  const prevFastEma = prevEmas[0];
+  const prevSlowEma = prevEmas[prevEmas.length - 1];
+
+  // BUY: Fast EMA crosses above Slow EMA (and RSI filter passes if enabled)
+  if (prevFastEma <= prevSlowEma && fastEma > slowEma && rsiBuyOk) {
     return 'BUY';
   }
 
-  // SELL: RSI overbought, price below fastest EMA, full bearish EMA stack
-  if (rsi > overbought && price < fastestEma && isBearishStack(emas)) {
+  // SELL: Fast EMA crosses below Slow EMA (and RSI filter passes if enabled)
+  if (prevFastEma >= prevSlowEma && fastEma < slowEma && rsiSellOk) {
     return 'SELL';
   }
 
@@ -109,32 +144,31 @@ export function generateSignal(rsi, price, emas, thresholds) {
 }
 
 /**
- * Classify the current RSI state relative to the configured thresholds
- * @param {number|null} rsi
- * @param {object} thresholds - RSI thresholds { oversold, overbought }
- * @returns {string} - One of WAIT, DEEP_OVERSOLD, OVERSOLD, NEUTRAL, OVERBOUGHT, EXTREME_OVERBOUGHT
+ * Get current trend based on EMA positions
+ * @param {number[]} emas - EMA values ordered from fastest to slowest
+ * @param {number} price - Current price
+ * @returns {string} - BULLISH, BEARISH, or NEUTRAL
  */
-export function getRsiStatus(rsi, thresholds) {
-  if (rsi === null || !thresholds) return 'WAIT';
+export function getEmaTrend(emas, price) {
+  if (!Array.isArray(emas) || emas.length === 0 || emas.some((ema) => ema === null)) {
+    return 'WAIT';
+  }
 
-  const { oversold, overbought } = thresholds;
+  // Single EMA: compare price to EMA
+  if (emas.length === 1) {
+    if (price > emas[0]) return 'BULLISH';
+    if (price < emas[0]) return 'BEARISH';
+    return 'NEUTRAL';
+  }
 
-  if (rsi <= oversold - 5) return 'DEEP_OVERSOLD';
-  if (rsi <= oversold) return 'OVERSOLD';
-  if (rsi >= overbought + 5) return 'EXTREME_OVERBOUGHT';
-  if (rsi >= overbought) return 'OVERBOUGHT';
+  // Multiple EMAs: check fast vs slow
+  const fastEma = emas[0];
+  const slowEma = emas[emas.length - 1];
 
+  if (fastEma > slowEma) return 'BULLISH';
+  if (fastEma < slowEma) return 'BEARISH';
   return 'NEUTRAL';
 }
-
-/**
- * Threshold presets
- */
-export const THRESHOLD_PRESETS = {
-  aggressive: { oversold: 40, overbought: 60, label: 'Aggressive (40/60)' },
-  standard: { oversold: 35, overbought: 65, label: 'Standard (35/65)' },
-  conservative: { oversold: 30, overbought: 70, label: 'Conservative (30/70)' },
-};
 
 /**
  * Timeframe options

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Real-time BTC/USDT trading signal bot that generates BUY/SELL signals based on RSI and a configurable EMA stack. Pure frontend React app — no backend needed.
+Real-time BTC/USDT trading signal bot that generates BUY/SELL signals based on EMA crossover strategy with optional RSI filter. Pure frontend React app — no backend needed.
 
 **Live URL:** https://btc.steffy.in
 **Repo:** https://github.com/steffyjk/BTC-buy-sell-AutoSignal
@@ -13,7 +13,7 @@ Real-time BTC/USDT trading signal bot that generates BUY/SELL signals based on R
 - **Framework:** React 18 + Vite
 - **Charts:** lightweight-charts v5 (TradingView)
 - **Data Source:** Binance WebSocket API (free, no auth)
-- **Styling:** Plain CSS (dark theme)
+- **Styling:** Plain CSS (light/dark theme)
 
 ## Commands
 
@@ -33,69 +33,55 @@ git add -A && git commit -m "message" && git push
 ```
 src/
 ├── App.jsx              # Main app, state management, WebSocket connection
-├── App.css              # All styles (dark theme)
+├── App.css              # All styles (light/dark theme)
 ├── components/
 │   ├── Chart.jsx        # Lightweight Charts candlestick + multiple EMA lines + markers
-│   ├── Controls.jsx     # Timeframe, sensitivity, RSI and EMA stack inputs
-│   └── SignalLog.jsx    # Signal history list
+│   ├── Controls.jsx     # Timeframe, EMA periods, RSI toggle and inputs
+│   ├── SignalLog.jsx    # Signal history list
+│   └── PaperTrading.jsx # Paper trading simulator
 └── utils/
-    ├── indicators.js    # RSI, EMA calculations, signal logic, presets
+    ├── indicators.js    # RSI, EMA calculations, signal logic
     └── binanceWs.js     # Binance WebSocket + REST API for candles
 ```
 
-## Signal Logic
+## Signal Logic (EMA Crossover + Optional RSI)
 
-**BUY Signal:** RSI < oversold threshold AND Price > fastest EMA AND all configured EMAs are bullishly stacked
-**SELL Signal:** RSI > overbought threshold AND Price < fastest EMA AND all configured EMAs are bearishly stacked
+### Two EMA Modes Based on EMA Count
 
-### Exact Logic Used In Code
-- Signal generation lives in `src/utils/indicators.js` inside `generateSignal(rsi, price, ema, thresholds)`.
-- A signal is only evaluated when both indicators are available:
-  - RSI needs at least `rsiPeriod + 1` closes
-  - Every configured EMA needs at least its own period worth of closes
-  - App-level minimum candles = `max(rsiPeriod + 1, ...emaPeriods)`
-- BUY is returned when:
-  - `rsi < oversold`
-  - `price > fastestEma`
-  - `EMA[0] > EMA[1] > EMA[2] > ...`
-- SELL is returned when:
-  - `rsi > overbought`
-  - `price < fastestEma`
-  - `EMA[0] < EMA[1] < EMA[2] < ...`
-- If neither condition matches, the function returns `null`.
-- EMA periods are user-configurable as a comma-separated list such as `9, 21, 50, 100`.
-- The app parses, de-duplicates, and sorts EMA periods automatically from fastest to slowest.
+**Single EMA Mode (Price Crossover):**
+- **BUY Signal:** Price crosses ABOVE the EMA
+- **SELL Signal:** Price crosses BELOW the EMA
 
-### How Signals Are Added In Practice
-- Historical scan:
-  - `scanHistoricalSignals()` walks candle-by-candle through the loaded history.
-  - It suppresses consecutive duplicate directions using `prevSignal`.
-  - Example: `BUY, BUY, BUY` across several candles is stored as a single BUY until a candle produces `null` or an opposite signal.
-- Real-time updates:
-  - The latest candle is checked on every update once historical scanning is complete.
-  - A live signal is added only once per candle timestamp using `lastSignalTimeRef`.
-  - This prevents repeated inserts while the same candle is still updating.
-- Settings changes:
-  - Changing threshold mode, RSI period, or EMA period triggers a full historical re-scan using the same logic.
+**Multiple EMA Mode (Fast/Slow Crossover):**
+- **BUY Signal:** Fastest EMA crosses ABOVE slowest EMA
+- **SELL Signal:** Fastest EMA crosses BELOW slowest EMA
 
-### Important Behavior Note
-- This is a reversal-style filter with trend confirmation, not a simple EMA crossover system:
-  - BUY requires RSI to already be in the oversold zone while price is above the fastest EMA and the full EMA stack is bullish.
-  - SELL requires RSI to already be in the overbought zone while price is below the fastest EMA and the full EMA stack is bearish.
-- There is no crossover check, no confirmation candle, and no volume filter in the current implementation.
+### RSI Filter (Toggle ON/OFF)
 
-### Threshold Presets (in `indicators.js`)
-| Mode | Oversold (BUY) | Overbought (SELL) |
-|------|----------------|-------------------|
-| Aggressive | < 40 | > 60 |
-| Standard | < 35 | > 65 |
-| Conservative | < 30 | > 70 |
+When RSI Filter is **OFF**: Pure EMA crossover signals
+
+When RSI Filter is **ON**: EMA crossover + RSI condition must be met
+- **BUY:** EMA crossover happens AND RSI <= Oversold threshold
+- **SELL:** EMA crossover happens AND RSI >= Overbought threshold
 
 ### Configurable Parameters
-- **Timeframe:** 1m, 5m, 15m, 1h, 4h
-- **RSI Period:** 2-50 (default: 14)
+- **Timeframe:** 1m, 5m, 15m, 1h, 4h (default: 1h)
 - **EMA Periods:** comma-separated list, 2-300 per EMA (default: `8, 30`)
-- **Sensitivity:** Aggressive, Standard, Conservative
+- **RSI Filter:** Toggle ON/OFF (default: OFF)
+- **RSI Oversold:** 1-49 (default: 30)
+- **RSI Overbought:** 51-99 (default: 80)
+
+### Exact Logic Used In Code
+- Signal generation lives in `src/utils/indicators.js` inside `generateSignal(price, emas, prevPrice, prevEmas, rsiConfig)`.
+- A crossover is detected by comparing current vs previous candle:
+  - **Single EMA BUY:** `prevPrice <= prevEMA && price > currentEMA`
+  - **Single EMA SELL:** `prevPrice >= prevEMA && price < currentEMA`
+  - **Multi EMA BUY:** `prevFastEMA <= prevSlowEMA && fastEMA > slowEMA`
+  - **Multi EMA SELL:** `prevFastEMA >= prevSlowEMA && fastEMA < slowEMA`
+- When RSI is enabled, signals also require:
+  - **BUY:** `rsi <= oversold`
+  - **SELL:** `rsi >= overbought`
+- RSI uses a fixed 14-period calculation
 
 ## Key Implementation Details
 
@@ -109,14 +95,20 @@ src/
   - `chart.addSeries(CandlestickSeries, options)` — NOT `addCandlestickSeries()`
   - `chart.addSeries(LineSeries, options)` — NOT `addLineSeries()`
   - `createSeriesMarkers(series, markers)` — NOT `series.setMarkers()`
-- Multiple EMA lines overlaid on candlesticks
+- Multiple EMA lines overlaid on candlesticks (different colors)
 - BUY markers = green arrows below bar
 - SELL markers = red arrows above bar
 
 ### Historical Signal Scanning (`App.jsx`)
-- On page load, scans all 200 historical candles for past signals
-- `scanHistoricalSignals()` function iterates through candles and applies signal logic
-- Re-scans when user changes RSI/EMA periods or sensitivity
+- On page load, scans all 200 historical candles for past crossovers
+- `scanHistoricalSignals()` function iterates through candles comparing each with previous
+- Re-scans when user changes EMA periods or RSI settings
+
+### Paper Trading (`PaperTrading.jsx`)
+- Simulated trading with configurable starting balance
+- 25% position size per trade
+- Supports Long and Short trades
+- Win rate stats and CSV export
 
 ## Common Issues & Fixes
 
@@ -125,7 +117,8 @@ src/
 | Blank page | lightweight-charts API changed in v5 | Use `addSeries()` not `addCandlestickSeries()` |
 | `setMarkers is not a function` | v5 removed setMarkers | Use `createSeriesMarkers()` |
 | EMA label doesn't update | Title set only at init | Call `series.applyOptions({ title })` on change |
-| No signals showing | Conditions not met | Check RSI + price vs EMA, or lower sensitivity |
+| No signals showing | Not enough data for crossover | Wait for enough candles or adjust settings |
+| Signal log text vertical | CSS grid mismatch | Use flexbox layout for signal items |
 
 ## Future Enhancements (Not Implemented)
 

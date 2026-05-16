@@ -1,21 +1,22 @@
-import { TIMEFRAMES, THRESHOLD_PRESETS } from '../utils/indicators';
+import { TIMEFRAMES } from '../utils/indicators';
 
 function Controls({
   timeframe,
   setTimeframe,
-  threshold,
-  setThreshold,
-  rsiPeriod,
-  setRsiPeriod,
   emaInput,
   setEmaInput,
   emaPeriods,
-  rsi,
-  rsiStatus,
   emas,
   emaTrend,
   price,
   connected,
+  rsiEnabled,
+  setRsiEnabled,
+  rsiOversold,
+  setRsiOversold,
+  rsiOverbought,
+  setRsiOverbought,
+  currentRsi,
 }) {
   const formatEmaValues = () => {
     if (!Array.isArray(emas) || emas.length === 0) return '--';
@@ -28,6 +29,19 @@ function Controls({
         return `${period}:${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
       })
       .join(' | ');
+  };
+
+  const getSignalMode = () => {
+    if (emaPeriods.length === 0) return 'NO EMA';
+    const emaMode = emaPeriods.length === 1 ? 'PRICE CROSS' : 'EMA CROSS';
+    return rsiEnabled ? `${emaMode} + RSI` : emaMode;
+  };
+
+  const getRsiStatus = () => {
+    if (currentRsi === null) return '--';
+    if (currentRsi <= rsiOversold) return 'OVERSOLD';
+    if (currentRsi >= rsiOverbought) return 'OVERBOUGHT';
+    return 'NEUTRAL';
   };
 
   return (
@@ -44,28 +58,6 @@ function Controls({
       </div>
 
       <div className="control-group">
-        <label>Sensitivity</label>
-        <select value={threshold} onChange={(e) => setThreshold(e.target.value)}>
-          {Object.entries(THRESHOLD_PRESETS).map(([key, preset]) => (
-            <option key={key} value={key}>
-              {preset.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="control-group">
-        <label>RSI Period</label>
-        <input
-          type="number"
-          min="2"
-          max="50"
-          value={rsiPeriod}
-          onChange={(e) => setRsiPeriod(Math.max(2, Math.min(50, parseInt(e.target.value) || 14)))}
-        />
-      </div>
-
-      <div className="control-group">
         <label>EMA Periods</label>
         <input
           type="text"
@@ -73,8 +65,41 @@ function Controls({
           onChange={(e) => setEmaInput(e.target.value)}
           placeholder="8, 30"
         />
-        <small className="control-help">Comma-separated, sorted automatically</small>
+        <small className="control-help">1 EMA = Price cross | 2+ EMAs = EMA cross</small>
       </div>
+
+      <div className="toggle-group">
+        <span className="toggle-label">RSI Filter</span>
+        <div
+          className={`toggle-switch ${rsiEnabled ? 'active' : ''}`}
+          onClick={() => setRsiEnabled(!rsiEnabled)}
+        />
+      </div>
+
+      {rsiEnabled && (
+        <div className="rsi-inputs">
+          <div className="rsi-input-group">
+            <label>Oversold</label>
+            <input
+              type="number"
+              min="1"
+              max="49"
+              value={rsiOversold}
+              onChange={(e) => setRsiOversold(Math.max(1, Math.min(49, parseInt(e.target.value) || 30)))}
+            />
+          </div>
+          <div className="rsi-input-group">
+            <label>Overbought</label>
+            <input
+              type="number"
+              min="51"
+              max="99"
+              value={rsiOverbought}
+              onChange={(e) => setRsiOverbought(Math.max(51, Math.min(99, parseInt(e.target.value) || 70)))}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="indicators">
         <div className="indicator">
@@ -84,19 +109,21 @@ function Controls({
           </span>
         </div>
         <div className="indicator">
-          <span className="indicator-label">RSI ({rsiPeriod})</span>
-          <span className={`indicator-value ${rsi !== null && rsi < THRESHOLD_PRESETS[threshold].oversold ? 'oversold' : rsi !== null && rsi > THRESHOLD_PRESETS[threshold].overbought ? 'overbought' : ''}`}>
-            {rsi !== null ? rsi.toFixed(2) : '--'}
+          <span className="indicator-label">Signal Mode</span>
+          <span className="indicator-value">
+            {getSignalMode()}
           </span>
         </div>
+        {rsiEnabled && (
+          <div className="indicator">
+            <span className="indicator-label">RSI (14)</span>
+            <span className={`indicator-value ${getRsiStatus() === 'OVERSOLD' ? 'connected' : getRsiStatus() === 'OVERBOUGHT' ? 'disconnected' : ''}`}>
+              {currentRsi !== null ? currentRsi.toFixed(1) : '--'} ({getRsiStatus()})
+            </span>
+          </div>
+        )}
         <div className="indicator">
-          <span className="indicator-label">RSI Status</span>
-          <span className={`indicator-value ${rsiStatus ? `rsi-status-${rsiStatus.toLowerCase()}` : ''}`}>
-            {rsiStatus === 'WAIT' ? '--' : rsiStatus.replaceAll('_', ' ')}
-          </span>
-        </div>
-        <div className="indicator">
-          <span className="indicator-label">EMA Stack</span>
+          <span className="indicator-label">EMA Values</span>
           <span className="indicator-value indicator-stack">
             {formatEmaValues()}
           </span>

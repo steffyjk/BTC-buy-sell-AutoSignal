@@ -1,4 +1,4 @@
-function SignalLog({ signals }) {
+function SignalLog({ signals, rsiEnabled }) {
   const formatEmaStack = (signal) => {
     if (!signal.emas || signal.emas.length === 0) return '';
     return signal.emas.map((ema) => `${ema.period}:${ema.value.toFixed(0)}`).join(' / ');
@@ -25,8 +25,10 @@ function SignalLog({ signals }) {
             <span className="signal-price">
               ${signal.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span className="signal-rsi">RSI: {signal.rsi.toFixed(1)}</span>
-            <span className="signal-rsi">EMA: {formatEmaStack(signal)}</span>
+            {rsiEnabled && signal.rsi !== null && (
+              <span className="signal-rsi">RSI: {signal.rsi.toFixed(1)}</span>
+            )}
+            <span className="signal-ema">EMA: {formatEmaStack(signal)}</span>
             <span className="signal-time">{signal.time}</span>
           </div>
         ))}
